@@ -13,14 +13,14 @@ set -e
 
 # Recommended Ubuntu base per variant
 declare -A VARIANT_SUITE=(
-    [latest]="questing"
+    [latest]="resolute"
     [ltr]="noble"
-    [nightly]="questing"
+    [nightly]="resolute"
 )
 declare -A VARIANT_IMAGE=(
-    [latest]="ubuntu:25.10"
+    [latest]="ubuntu:26.04"
     [ltr]="ubuntu:24.04"
-    [nightly]="ubuntu:25.10"
+    [nightly]="ubuntu:26.04"
 )
 
 # Map Ubuntu version to suite codename (used only for overrides)
@@ -76,9 +76,11 @@ fi
 echo "==> Setting up QGIS ($VARIANT) using $BASE_IMAGE (suite: $SUITE)"
 
 # Create container if it doesn't already exist
-if distrobox list | grep -q "$CONTAINER_NAME"; then
+if distrobox list | awk -F'|' '{print $2}' | tr -d ' ' | grep -qx "$CONTAINER_NAME"; then
     echo "==> Container $CONTAINER_NAME already exists, skipping creation"
 else
+    podman pull "docker.io/library/$BASE_IMAGE" || { echo "==> Error: Failed to pull $BASE_IMAGE"; exit 1; }
+    podman image inspect "docker.io/library/$BASE_IMAGE" > /dev/null 2>&1 || { echo "==> Error: Image $BASE_IMAGE appears corrupt"; exit 1; }
     distrobox create --name "$CONTAINER_NAME" --image "$BASE_IMAGE" --no-entry
 fi
 
