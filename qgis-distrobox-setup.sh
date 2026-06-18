@@ -92,7 +92,7 @@ echo "==> Updating package lists"
 sudo apt update
 
 echo "==> Installing prerequisites"
-sudo apt install -y software-properties-common gnupg wget unzip
+sudo apt install -y software-properties-common gnupg wget unzip python3-pip python3-venv python3-dev python3-setuptools python3-wheel
 
 echo "==> Adding QGIS signing key"
 sudo mkdir -m755 -p /etc/apt/keyrings
@@ -125,6 +125,17 @@ else
     else
         distrobox-export --app qgis
     fi
+fi
+
+echo "==> Checking PROJ grid files"
+PROJ_DIR="$HOME/.local/share/proj"
+if [ -d "$PROJ_DIR" ] && ls "$PROJ_DIR"/us_noaa_*.tif "$PROJ_DIR"/us_nga_*.tif "$PROJ_DIR"/ca_nrc_*.tif > /dev/null 2>&1; then
+    echo "==> PROJ grid files already present, skipping download"
+else
+    echo "==> Downloading PROJ grid files for US, Canada, and World"
+    projsync --user-writable-directory --source-id us_noaa
+    projsync --user-writable-directory --source-id us_nga
+    projsync --user-writable-directory --source-id ca_nrc
 fi
 
 echo "==> Container setup complete"
