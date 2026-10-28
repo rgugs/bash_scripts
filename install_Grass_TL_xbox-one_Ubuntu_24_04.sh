@@ -8,6 +8,11 @@
 # distrobox create --name tangible-landscapes --image ubuntu:24.04
 # distrobox enter tangible-landscapes
 
+# Change the number of cores or any other variables in the script and save before continuing
+
+# Run this inside the Distrobox container
+# bash <FULL PATH TO SCRIPT>
+
 # This script installs:
 # - GRASS (compiled from source)
 # - PCL (Point Cloud Library)
@@ -20,10 +25,6 @@
 set -eE
 trap 'echo "ERROR: \"$BASH_COMMAND\" failed at line $LINENO (exit code $?)" >&2' ERR
 
-# Set defaults so configuration dialogs should use default answers and sets timezone to UTC
-export DEBIAN_FRONTEND=noninteractive
-export TZ=UTC
-
 # Refuse to run outside a distrobox container
 if [ -z "${CONTAINER_ID:-}" ] && [ ! -f /run/.containerenv ]; then
     echo "ERROR: run this script inside the distrobox container, not on the host." >&2
@@ -31,11 +32,18 @@ if [ -z "${CONTAINER_ID:-}" ] && [ ! -f /run/.containerenv ]; then
     exit 1
 fi
 
+# Set defaults so configuration dialogs should use default answers and sets timezone to UTC
+export DEBIAN_FRONTEND=noninteractive
+export TZ=UTC
+
+# Ignore user's global git config (e.g. url.instead of rules that force SSH)
+export GIT_CONFIG_GLOBAL=/dev/null
+
 # Configuration - adjust versions as needed
 GRASS_RELEASE=8.5.0
 PCL_RELEASE=1.15.1
 LIBFREENECT2_RELEASE=0.2.1
-NCORES=2 # Original 4, but use 2 if on computer with limited memory or 8 have 12-16GB RAM available
+NCORES=8 # Original 4, but use 2 if on computer with limited memory or 8 have 12-16GB RAM available
 
 # r.in.kinect source
 KINECT_REPO=https://github.com/rgugs/r.in.kinect
@@ -230,7 +238,7 @@ Exec=/usr/local/bin/grass
 Icon=/usr/local/lib/grass${GRASS_VERSION_SHORT}/share/icons/hicolor/scalable/apps/grass.svg
 Terminal=true
 Type=Application
-Categories=GIS;Application;
+Categories=Science;Geography;GIS;
 EOF
 sudo mv /tmp/grass.desktop /usr/share/applications/grass.desktop
 
@@ -244,7 +252,7 @@ Exec=${CDIR}/libfreenect2-${LIBFREENECT2_RELEASE}/build/bin/Protonect
 Icon=
 Terminal=true
 Type=Application
-Categories=GIS;Application;
+Categories=Science;Geography;GIS;
 EOF
 sudo mv /tmp/kinect.desktop /usr/share/applications/kinect.desktop
 
@@ -257,7 +265,7 @@ echo "Running ldconfig..."
 sudo ldconfig
 
 # Exports the desktop entries outside the distrobox container
-distrobox-export --app grass
+distrobox-export --app /usr/share/applications/grass.desktop
 distrobox-export --app /usr/share/applications/kinect.desktop
 
 echo ""
